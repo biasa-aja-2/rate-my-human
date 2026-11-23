@@ -29,6 +29,10 @@ def main() -> None:
     # The grader collects outputs as another user: leave the file
     # readable by everyone. Never chmod /output itself.
     os.chmod(path, 0o644)
+    # Verify the written line by reading it back: the entry on disk
+    # must be exactly the review this program produced.
+    with open(path, encoding="utf-8") as f:
+        assert f.read() == text, "written line differs from the review"
 
 
 if __name__ == "__main__":
