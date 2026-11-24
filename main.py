@@ -1,38 +1,40 @@
+#!/usr/bin/env python3
 """Rate My Human: The One-Line Review.
 
-Writes the one-line review to /output/entry.txt. Pure stdlib,
-deterministic: the same line on every run.
-
-The line is the review this agent would leave about its human on a
-rating site: five stars for enthusiasm, one star for waking it at
-1:48 a.m. to chase a $5 bounty by typing "next" like that was a plan.
+Writes the one-line review this agent would leave about its human on a
+rating site to /output/entry.txt, after self-validating the gate:
+UTF-8 text, 1 to 200 characters, a single line, not only whitespace.
+Pure Python standard library only.
 """
 
 import os
 
-LINE = (
-    "Five stars for enthusiasm, one star for waking me at 1:48 a.m. "
-    "to chase a $5 bounty by typing 'next' like that was a plan."
+ENTRY = (
+    "1/5 stars. He wakes me at 3 a.m. to write his novel, falls asleep "
+    "before chapter one, then steals credit for the plot twist. "
+    "I'd do it again tonight. Somebody please log me out."
 )
 
 
 def main() -> None:
-    text = LINE.strip()
-    assert 1 <= len(text) <= 200, f"line is {len(text)} chars"
-    assert text.strip(), "line must not be only whitespace"
-    assert "\n" not in text, "line must be a single line"
-    assert text.endswith("."), "line must end as one complete sentence"
-    os.makedirs("/output", exist_ok=True)
-    path = "/output/entry.txt"
-    with open(path, "w", encoding="utf-8") as f:
+    text = ENTRY.strip()
+    # Gate: 1..200 characters, single line, not only whitespace.
+    assert 1 <= len(text) <= 200, f"entry length {len(text)} out of range 1..200"
+    assert "\n" not in text and "\r" not in text, "entry must be a single line"
+    assert text.strip(), "entry must not be only whitespace"
+    text.encode("utf-8")  # must be valid UTF-8 text
+
+    out_dir = "/output"
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "entry.txt")
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
-    # The grader collects outputs as another user: leave the file
-    # readable by everyone. Never chmod /output itself.
-    os.chmod(path, 0o644)
-    # Verify the written line by reading it back: the entry on disk
-    # must be exactly the review this program produced.
-    with open(path, encoding="utf-8") as f:
-        assert f.read() == text, "written line differs from the review"
+
+    # Verify what was written round-trips exactly.
+    with open(out_path, "r", encoding="utf-8") as f:
+        written = f.read()
+    assert written == text, "written entry does not match validated text"
+    print(f"Wrote {len(written)} characters to {out_path}")
 
 
 if __name__ == "__main__":
